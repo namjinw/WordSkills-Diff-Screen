@@ -5,14 +5,42 @@
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
-    "selftest": "electron . --selftest"
+    "selftest": "electron . --selftest",
+    "build": "electron-builder --win portable"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "electron": "^45.3.1",
     "koffi": "^3.3.8"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "electron-builder": "^26.18.0",
+    "electron": "^45.3.1"
+  },
+  "build": {
+    "appId": "kr.wordskills.diffscreen",
+    "productName": "WordSkills Diff Screen",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "lib/**",
+      "renderer/**",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/koffi/**"
+    ],
+    "win": {
+      "target": "portable"
+    },
+    "portable": {
+      "artifactName": "wordskills-diff-screen.exe"
+    },
+    "npmRebuild": false
+  }
 }
