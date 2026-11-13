@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'self'">
+<title>wordskills-diff-screen</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 10px 12px; background: #15171c; color: #e8eaf0; font: 13px 'Malgun Gothic', sans-serif; user-select: none; }
+  .row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .bar { font-size: 15px; font-weight: 700; }
+  .bar input[type=range] { flex: 1; accent-color: #5b8cff; }
+  #match { min-width: 108px; text-align: right; color: #7dffb0; font-size: 16px; }
+  button { background: #262a33; color: #e8eaf0; border: 1px solid #3a4050; border-radius: 6px; padding: 5px 10px; font: inherit; cursor: pointer; }
+  button:hover { background: #31364a; }
+  button.on { background: #3a5bd9; border-color: #5b8cff; }
+  label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .wrap { flex-wrap: wrap; gap: 6px; }
+  #status { font-size: 12px; color: #aab; min-height: 16px; word-break: break-all; }
+  #info { font-size: 11px; color: #778; margin-top: 4px; }
+  #picker { display: none; margin-bottom: 8px; border: 1px solid #3a4050; border-radius: 6px; max-height: 220px; overflow: auto; }
+  #picker.open { display: block; }
+  .win { padding: 5px 8px; cursor: pointer; border-bottom: 1px solid #262a33; }
+  .win:hover { background: #31364a; }
+  .win small { color: #889; margin-left: 6px; }
+</style></head>
+<body>
+  <div class="row bar">
+    <span>투명도 <span id="opv">50</span>%</span>
+    <input id="op" type="range" min="0" max="100" value="50">
+    <span id="match">일치도 --%</span>
+  </div>
+  <div class="row wrap">
+    <button id="pick">창 선택</button>
+    <button id="photo">사진 불러오기</button>
+    <button id="toggle">Tab: 사진↔에뮬레이터 전환</button>
+    <button id="fit">맞추기</button>
+    <button id="calib">화면 영역 보정</button>
+  </div>
+  <div id="picker"></div>
+  <div class="row wrap">
+    <label><input id="autofit" type="checkbox"> 자동 맞춤</label>
+    <label><input id="click" type="checkbox"> 클릭 통과</label>
+    <label><input id="autocmp" type="checkbox"> 일치도 자동 갱신</label>
+    <button id="cmp">지금 갱신 (F5)</button>
+    <button id="adb">adb 지정</button>
+  </div>
+  <div id="status"></div>
+  <div id="info">F4 전환 · F5 갱신 · F6 클릭통과 · Ctrl+Alt+방향키 1px(Shift 10px) · Ctrl+Alt+0 이동 초기화 · Ctrl+Alt+PgUp/PgDn 투명도</div>
+  <script src="control.js"></script>
+</body></html>
