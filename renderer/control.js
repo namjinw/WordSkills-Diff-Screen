@@ -1,10 +1,10 @@
 const $ = (id) => document.getElementById(id);
-const api = window.api;
+const A = window.api;
 let dragging = false;
 
-function fitHeight() { api.resizeUi(document.documentElement.scrollHeight); }
+function fitHeight() { A.resizeUi(document.documentElement.scrollHeight); }
 
-api.onState((s) => {
+A.onState((s) => {
   if (!dragging) { $('op').value = s.opacity; }
   $('opv').textContent = s.opacity;
   $('match').textContent = '일치도 ' + (s.match == null ? '--' : s.match) + '%';
@@ -16,23 +16,23 @@ api.onState((s) => {
   fitHeight();
 });
 
-$('op').addEventListener('input', (e) => { dragging = true; $('opv').textContent = e.target.value; api.setOpacity(Number(e.target.value)); });
+$('op').addEventListener('input', (e) => { dragging = true; $('opv').textContent = e.target.value; A.setOpacity(Number(e.target.value)); });
 $('op').addEventListener('change', () => { dragging = false; });
-$('autofit').addEventListener('change', (e) => api.setAutoFit(e.target.checked));
-$('click').addEventListener('change', (e) => api.setClickThrough(e.target.checked));
-$('autocmp').addEventListener('change', (e) => api.setAutoCompare(e.target.checked));
-$('photo').addEventListener('click', () => api.pickPhoto());
-$('toggle').addEventListener('click', () => api.toggleView());
-$('fit').addEventListener('click', () => api.fitNow());
-$('calib').addEventListener('click', () => api.calibrate());
-$('cmp').addEventListener('click', () => api.compareNow());
-$('adb').addEventListener('click', () => api.pickAdb());
+$('autofit').addEventListener('change', (e) => A.setAutoFit(e.target.checked));
+$('click').addEventListener('change', (e) => A.setClickThrough(e.target.checked));
+$('autocmp').addEventListener('change', (e) => A.setAutoCompare(e.target.checked));
+$('photo').addEventListener('click', () => A.pickPhoto());
+$('toggle').addEventListener('click', () => A.toggleView());
+$('fit').addEventListener('click', () => A.fitNow());
+$('calib').addEventListener('click', () => A.calibrate());
+$('cmp').addEventListener('click', () => A.compareNow());
+$('adb').addEventListener('click', () => A.pickAdb());
 
 $('pick').addEventListener('click', async () => {
   const p = $('picker');
   if (p.classList.contains('open')) { p.classList.remove('open'); fitHeight(); return; }
   p.textContent = '불러오는 중...'; p.classList.add('open'); fitHeight();
-  const list = await api.listWindows();
+  const list = await A.listWindows();
   p.textContent = '';
   for (const w of list) {
     const d = document.createElement('div');
@@ -41,7 +41,7 @@ $('pick').addEventListener('click', async () => {
     const small = document.createElement('small');
     small.textContent = w.size;
     d.appendChild(small);
-    d.addEventListener('click', () => { api.selectWindow(w.hwnd); p.classList.remove('open'); fitHeight(); });
+    d.addEventListener('click', () => { A.selectWindow(w.hwnd); p.classList.remove('open'); fitHeight(); });
     p.appendChild(d);
   }
   if (!list.length) p.textContent = '열린 창이 없습니다.';
@@ -49,7 +49,7 @@ $('pick').addEventListener('click', async () => {
 });
 
 // Tab: 사진↔에뮬레이터 전환 (컨트롤 창에 포커스가 있을 때). 어디서든 쓰려면 F4.
-document.addEventListener('keydown', (e) => { if (e.key === 'Tab') { e.preventDefault(); api.toggleView(); } });
+document.addEventListener('keydown', (e) => { if (e.key === 'Tab') { e.preventDefault(); A.toggleView(); } });
 
-api.getState();
+A.getState();
 fitHeight();
