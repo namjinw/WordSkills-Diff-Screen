@@ -15,7 +15,7 @@ let offset = { x: 0, y: 0 };  // 방향키 미세 이동(물리 px)
 let lastRect = '';
 let comparing = false;
 const state = {
-  opacity: 50, view: 'photo', clickThrough: true, autoFit: true, autoCompare: true,
+  opacity: 50, view: 'blend', clickThrough: true, autoFit: true, autoCompare: true,
   photoName: '', targetTitle: '', match: null, status: '창을 선택하고 사진을 불러오세요.',
   calibrated: false, adbPath: '',
 };
@@ -26,7 +26,7 @@ const ownHwnds = () => [control, overlay, calibWin].map(hwndOf).filter(Boolean);
 
 function pushState() {
   if (control && !control.isDestroyed()) control.webContents.send('state', state);
-  if (overlay && !overlay.isDestroyed()) overlay.webContents.send('overlay', { opacity: state.opacity, match: state.match });
+  if (overlay && !overlay.isDestroyed()) overlay.webContents.send('overlay', { opacity: state.view === 'photo' ? 100 : state.opacity, match: state.match });
 }
 function setStatus(msg) { state.status = msg; pushState(); }
 
@@ -82,17 +82,17 @@ function applyRect(force) {
   if (!r) return;
   const key = JSON.stringify(r);
   if (!force && key === lastRect) {
-    if (!overlay.isVisible() && state.view === 'photo' && photo) overlay.showInactive();
+    if (!overlay.isVisible() && state.view !== 'emu' && photo) overlay.showInactive();
     return;
   }
   lastRect = key;
   overlay.setBounds(screen.screenToDipRect(null, r));
-  if (state.view === 'photo' && photo && !overlay.isVisible()) overlay.showInactive();
+  if (state.view !== 'emu' && photo && !overlay.isVisible()) overlay.showInactive();
 }
 
 function updateVisibility() {
   if (!overlay || overlay.isDestroyed()) return;
-  if (state.view === 'photo' && photo && target) { applyRect(true); overlay.showInactive(); }
+  if (state.view !== 'emu' && photo && target) { applyRect(true); overlay.showInactive(); }
   else overlay.hide();
   pushState();
 }
@@ -100,7 +100,12 @@ function updateVisibility() {
 setInterval(() => { if (state.autoFit) applyRect(false); }, 120);
 
 // ---------- 동작 ----------
-function toggleView() { state.view = state.view === 'photo' ? 'emu' : 'photo'; updateVisibility(); }
+// 사진 100% ↔ 에뮬레이터 전환. 슬라이더를 움직이면 겹쳐 보기(blend)로 돌아간다.
+function toggleView() {
+  state.view = state.view === 'emu' ? 'photo' : 'emu';
+  updateVisibility();
+  if (state.view === 'emu' && target) winapi.bringToFront(target.hwnd); // 다른 창에 가려져 있어도 에뮬레이터를 앞으로
+}
 function setOpacity(v) {
   state.opacity = Math.min(100, Math.max(0, Math.round(v)));
   config.save({ opacity: state.opacity }); pushState();
@@ -115,7 +120,7 @@ function loadPhotoFile(file) {
   const img = nativeImage.createFromPath(file);
   if (img.isEmpty()) { setStatus('사진을 열 수 없습니다 (PNG/JPG/BMP만 지원): ' + file); return; }
   photo = img; state.photoName = path.basename(file); config.save({ photoPath: file });
-  sendPhoto(); state.view = 'photo'; updateVisibility(); setStatus('사진을 불러왔습니다.');
+  sendPhoto(); state.view = 'blend'; updateVisibility(); setStatus('사진을 불러왔습니다.');
   compareNow();
 }
 
@@ -148,6 +153,7 @@ function selectWindow(hwnd) {
   const hint = !photo ? ' — [사진 불러오기]를 누르면 이 창 위에 겹쳐 보입니다.' : state.calibrated ? '' : ' — [화면 영역 보정]이 필요합니다.';
   setStatus(`연결: ${w.title}${hint}`);
   updateVisibility();
+  winapi.bringToFront(target.hwnd);
 }
 
 // ---------- 화면 영역 보정 (왼쪽 위 → 오른쪽 아래 클릭) ----------
@@ -211,7 +217,7 @@ function registerIpc() {
       setStatus('adb 경로 저장: ' + r.filePaths[0]); compareNow();
     }
   });
-  ipcMain.on('set-opacity', (_e, v) => setOpacity(v));
+  ipcMain.on('set-opacity', (_e, v) => { state.view = 'blend'; setOpacity(v); updateVisibility(); });
   ipcMain.on('toggle-view', toggleView);
   ipcMain.on('set-click-through', (_e, b) => setClickThrough(b));
   ipcMain.on('set-auto-fit', (_e, b) => { state.autoFit = !!b; config.save({ autoFit: state.autoFit }); if (b) applyRect(true); pushState(); });

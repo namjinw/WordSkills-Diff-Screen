@@ -11,7 +11,7 @@ A.onState((s) => {
   $('autofit').checked = s.autoFit;
   $('click').checked = s.clickThrough;
   $('autocmp').checked = s.autoCompare;
-  $('toggle').classList.toggle('on', s.view === 'photo');
+  $('toggle').classList.toggle('on', s.view !== 'emu');
   $('status').textContent = s.status;
   fitHeight();
 });
