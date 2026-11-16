@@ -1,6 +1,6 @@
 {
   "name": "wordskills-diff-screen",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "안드로이드 에뮬레이터 화면과 프로토타입 사진을 겹쳐 비교하는 도구",
   "main": "main.cjs",
   "scripts": {

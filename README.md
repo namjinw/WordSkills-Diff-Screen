@@ -32,3 +32,20 @@ npm start
 npm run build
 ```
 `dist/wordskills-diff-screen-setup-<버전>.exe`(NSIS 설치 프로그램)가 만들어집니다. 코드 서명이 없어 처음 실행 시 SmartScreen 경고가 뜰 수 있습니다.
+
+## 새 기능 (v0.3.0)
+- 보기 모드: 사진 / 겹침 / 분할(슬라이더) / 차이(붉게 표시) / 앱 — 어떤 모드에서든 F4로 앱↔직전 모드 전환
+- 일치도: 상·중·하 구역별 점수, 상단·하단 제외 %
+- 자동 매칭(버튼으로 켬) + 화면↔사진 연결(앱 화면 지문 학습)
+- 도구: 측정(px/dp), 가이드선, 눈금자(dp), 색상 스포이드(클립보드 복사)
+- 자동 업데이트 (설치본에서만 동작)
+- 점검: `npm run selftest`, `npm run e2e`(실제 키 입력), `npm run emutest`(켜진 에뮬레이터 필요)
+
+## 자동 업데이트 배포 절차
+1. `package.json`의 version을 올리고 `npm run build`
+2. 커밋 후 `git tag v<버전>`, `git push origin main v<버전>`
+3. GitHub에서 `v<버전>` 태그로 **공개(draft 아님) 릴리스**를 만들고 `dist/`의 파일 3개를 첨부:
+   `wordskills-diff-screen-setup-<버전>.exe`, `…exe.blockmap`, `latest.yml`
+4. 설치된 앱은 시작 시/[업데이트 확인]에서 새 버전을 받아 [재시작하여 설치]로 갱신합니다.
+
+※ v0.3.0 이전(v0.2.x) 설치본에는 업데이트 기능이 없어 v0.3.0을 한 번 직접 설치해야 합니다.
