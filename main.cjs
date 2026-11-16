@@ -163,7 +163,6 @@ function dockControl(force) {
   setBoundsSafe(control, b);
 }
 
-let away = false;
 /** 에뮬레이터/이 앱이 앞일 때만 오버레이와 사이드바를 맨 위에 둔다. 다른 창이 위로 오면 그 창이 가려지지 않게 물러난다 */
 function syncAway() {
   const fg = winapi.getForeground();
@@ -186,13 +185,21 @@ setInterval(() => {
   syncShortcuts();
 }, 120);
 
+let away = false;
+
 // ---------- 동작 ----------
 function toggleView() {
   if (!target) { setStatus('먼저 [창 선택]으로 에뮬레이터 창을 고르세요.'); return; }
   if (!photo) { setStatus('먼저 [사진 불러오기]로 사진을 고르세요.'); return; }
+  // 다른 앱(코드 에디터 등)이 앞이라 사진이 물러나 있는 상태: 보기 모드는 그대로 두고 에뮬레이터+사진을 다시 앞으로 가져온다
+  if (away && state.view !== 'emu') {
+    winapi.bringToFront(target.hwnd);
+    away = false; control.setAlwaysOnTop(true, 'screen-saver');
+    updateVisibility(); return;
+  }
   state.view = state.view === 'emu' ? 'photo' : 'emu';
   updateVisibility();
-  if (state.view === 'emu') winapi.bringToFront(target.hwnd); // 다른 창에 가려져 있어도 에뮬레이터를 앞으로
+  winapi.bringToFront(target.hwnd); // 어느 방향이든 에뮬레이터를 앞으로
 }
 function setOpacity(v) {
   state.opacity = Math.min(100, Math.max(0, Math.round(v)));
@@ -380,7 +387,7 @@ function registerIpc() {
 }
 
 // ---------- 단축키 ----------
-// 전역 단축키는 대상(에뮬레이터) 창이 맨 앞일 때만 등록한다. 다른 프로그램의 키를 가로채지 않기 위해서.
+// F4(전환)만 항상 전역으로 등록한다. 나머지는 대상(에뮬레이터) 창이 맨 앞일 때만 등록해 다른 프로그램의 키를 가로채지 않는다.
 // 컨트롤 창이 앞일 때는 컨트롤 창 안에서 같은 키를 직접 처리한다(renderer/control.js).
 let regKey = '';
 function syncShortcuts() {
@@ -392,9 +399,9 @@ function syncShortcuts() {
   regKey = key;
   globalShortcut.unregisterAll();
   const reg = (acc, fn) => { try { globalShortcut.register(acc, fn); } catch {} };
+  reg('F4', toggleView); // 전환은 어느 창이 앞이든(코드 에디터 포함) 항상 동작
   if (active) {
     const M = 'CommandOrControl+Alt+';
-    reg('F4', toggleView);
     reg('F5', compareNow);
     reg('F6', () => setClickThrough(!state.clickThrough));
     for (const [k, dx, dy] of [['Left', -1, 0], ['Right', 1, 0], ['Up', 0, -1], ['Down', 0, 1]]) {

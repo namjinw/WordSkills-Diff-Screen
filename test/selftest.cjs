@@ -114,6 +114,10 @@ module.exports = async (ctx) => {
     other.focus(); await sleep(700);
     check('다른 창이 앞일 때 오버레이 숨김', !ov.isVisible());
     check('다른 창이 앞일 때 사이드바 항상 위 해제', !getControl().isAlwaysOnTop());
+    const viewBefore = state.view;
+    toggleView(); await sleep(500);
+    check('다른 창이 앞일 때 F4: 사진이 다시 앞으로(모드 유지)', ov.isVisible() && state.view === viewBefore, `view=${state.view}`);
+    other.focus(); await sleep(700);
     other.destroy(); winapi.bringToFront(np.hwnd); await sleep(700);
     check('대상 창이 다시 앞이면 오버레이 복귀', ov.isVisible());
     check('사이드바 항상 위 복귀', getControl().isAlwaysOnTop());
