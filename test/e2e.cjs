@@ -11,7 +11,7 @@ module.exports = async (ctx) => {
   const log = (m) => console.log(m);
   const snap = (tag) => {
     const ov = getOverlay();
-    log(`${tag.padEnd(34)} view=${state.view.padEnd(5)} photo=${state.photoName.padEnd(22)} idx=${state.index + 1}/${state.count} overlay=${ov.isVisible() ? 'SHOW' : 'hide'} fgIsTarget=${winapi.getForeground() === tgt.hwnd} status="${state.status.slice(0, 40)}"`);
+    log(`${tag.padEnd(34)} view=${state.mode.padEnd(5)} photo=${state.photoName.padEnd(22)} idx=${state.index + 1}/${state.count} overlay=${ov.isVisible() ? 'SHOW' : 'hide'} fgIsTarget=${winapi.getForeground() === tgt.hwnd} status="${state.status.slice(0, 40)}"`);
   };
   const emu = new BrowserWindow({ x: 300, y: 80, width: 420, height: 880, title: 'Android Emulator - e2e:5554' });
   emu.loadURL('data:text/html,emu');

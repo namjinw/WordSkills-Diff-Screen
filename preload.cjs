@@ -11,6 +11,10 @@ contextBridge.exposeInMainWorld('api', {
   getState: send('get-state'),
   pickDir: send('pick-dir'), setDir: send('set-dir'), step: send('step'), nudge: send('nudge'),
   setDock: send('set-dock'), setDockSide: send('set-dock-side'),
+  setMode: send('set-mode'), setSplit: send('set-split'), setThreshold: send('set-threshold'), setExclude: send('set-exclude'),
+  setAutoMatch: send('set-auto-match'), linkCurrent: send('link-current'), setTool: send('set-tool'), setRulers: send('set-rulers'),
+  clearGuides: send('clear-guides'), readout: send('readout'), pickColor: (x, y) => ipcRenderer.invoke('pick-color', x, y),
+  checkUpdate: send('check-update'), installUpdate: send('install-update'),
   calibClick: send('calib-click'), calibCancel: send('calib-cancel'),
-  onState: on('state'), onOverlay: on('overlay'), onOverlayImage: on('overlay-image'), onCalibStep: on('calib-step'),
+  onState: on('state'), onOverlay: on('overlay'), onOverlayImage: on('overlay-image'), onCalibStep: on('calib-step'), onOverlayDiff: on('overlay-diff'), onClearGuides: on('clear-guides'),
 });

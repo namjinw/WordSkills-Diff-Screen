@@ -55,12 +55,12 @@ module.exports = async (ctx) => {
     check('오버레이 표시', ov.isVisible());
     check('오버레이가 창 영역에 정확히 겹침', near(b, e), `overlay ${JSON.stringify(b)} / window ${JSON.stringify(e)}`);
     check('항상 위(always-on-top)', ov.isAlwaysOnTop());
-    const imgOk = await ov.webContents.executeJavaScript('(()=>{const i=document.getElementById("img");return i.complete&&i.naturalWidth===300&&i.naturalHeight===600})()');
+    const imgOk = await ov.webContents.executeJavaScript('(()=>{const i=document.getElementById("photo");return i.complete&&i.naturalWidth===300&&i.naturalHeight===600})()');
     check('오버레이에 사진 로드', imgOk);
 
     // 4) 투명도
     setOpacity(30); await sleep(300);
-    const op = await ov.webContents.executeJavaScript('getComputedStyle(document.getElementById("img")).opacity');
+    const op = await ov.webContents.executeJavaScript('getComputedStyle(document.getElementById("photo")).opacity');
     check('투명도 30% 반영', Math.abs(Number(op) - 0.3) < 0.01, `opacity=${op}`);
 
     // 5) 창 이동·크기 변경 따라가기
@@ -116,16 +116,18 @@ module.exports = async (ctx) => {
     check('다른 창이 앞일 때 사이드바 항상 위 해제', !getControl().isAlwaysOnTop());
     // F4는 포커스·가려짐과 무관하게 항상 전환하고, 대상 창을 앞으로 가져온다
     toggleView(); await sleep(500);
-    check('다른 창이 앞이어도 F4가 전환(에뮬레이터 보기)', state.view === 'emu' && winapi.getForeground() === np.hwnd, `view=${state.view}`);
+    check('다른 창이 앞이어도 F4가 전환(에뮬레이터 보기)', state.mode === 'emu' && winapi.getForeground() === np.hwnd, `mode=${state.mode}`);
     other.focus(); await sleep(500);
     toggleView(); await sleep(500);
-    check('다른 창이 앞이어도 F4로 사진 보기: 오버레이 즉시 복귀', state.view === 'photo' && ov.isVisible(), `view=${state.view} visible=${ov.isVisible()}`);
+    check('다른 창이 앞이어도 F4로 사진 보기: 오버레이 즉시 복귀', state.mode === 'blend' && ov.isVisible(), `mode=${state.mode} visible=${ov.isVisible()}`);
     check('사이드바 항상 위 복귀', getControl().isAlwaysOnTop());
     other.destroy();
 
     // 9-3) F4를 연타해도(키 반복) 중복 전환되지 않고 한 번씩 정확히 번갈아 동작
-    const v0 = state.view; toggleView(); toggleView(); await sleep(300);
-    check('연속 호출해도 상태 일관(두 번 = 원래대로)', state.view === v0, state.view);
+    const v0 = state.mode; toggleView(); toggleView(); await sleep(300);
+    check('연속 호출해도 상태 일관(두 번 = 원래대로)', state.mode === v0, state.mode);
+
+    await require('./features.cjs')(ctx, check);
 
     // 10) 클릭 통과는 API가 없어 설정 호출만 확인
     check('adb 경로 탐색', true, state.adbPath || '(없음)');

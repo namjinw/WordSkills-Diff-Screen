@@ -6,19 +6,21 @@
   "scripts": {
     "start": "electron .",
     "selftest": "electron . --selftest",
-    "build": "electron-builder --win nsis",
-    "e2e": "electron . --e2e"
+    "build": "electron-builder --win nsis --publish never",
+    "e2e": "electron . --e2e",
+    "emutest": "electron . --emutest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "electron-updater": "^6.8.11",
     "koffi": "^3.3.8"
   },
   "private": true,
   "devDependencies": {
-    "electron-builder": "^26.18.0",
-    "electron": "^45.3.1"
+    "electron": "^45.3.1",
+    "electron-builder": "^26.18.0"
   },
   "build": {
     "appId": "kr.wordskills.diffscreen",
@@ -47,6 +49,13 @@
       "perMachine": false,
       "createDesktopShortcut": true,
       "artifactName": "wordskills-diff-screen-setup-${version}.exe"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "namjinw",
+        "repo": "WordSkills-Diff-Screen"
+      }
+    ]
   }
 }

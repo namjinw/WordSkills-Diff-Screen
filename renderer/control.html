@@ -10,21 +10,32 @@
     font: 13px 'Malgun Gothic', sans-serif; user-select: none; overflow-y: auto; }
   h1 { margin: 0; font-size: 14px; display: flex; align-items: center; gap: 8px; }
   h1 img { width: 22px; height: 22px; }
+  h1 small { color: #667; font-weight: 400; font-size: 11px; margin-left: auto; }
   section { border: 1px solid #2a2f3b; border-radius: 8px; padding: 9px; display: flex; flex-direction: column; gap: 7px; flex-shrink: 0; }
   section > b { font-size: 11px; color: #8a93a8; font-weight: 600; letter-spacing: .04em; }
   .row { display: flex; align-items: center; gap: 6px; }
   .row.wrap { flex-wrap: wrap; }
-  button { background: #262a33; color: #e8eaf0; border: 1px solid #3a4050; border-radius: 6px; padding: 5px 9px; font: inherit; cursor: pointer; }
+  button { background: #262a33; color: #e8eaf0; border: 1px solid #3a4050; border-radius: 6px; padding: 5px 8px; font: inherit; cursor: pointer; }
   button:hover { background: #31364a; }
   button.on { background: #3a5bd9; border-color: #5b8cff; }
   button.grow { flex: 1; }
-  input[type=text] { flex: 1; min-width: 0; background: #0e1015; color: #e8eaf0; border: 1px solid #3a4050; border-radius: 6px; padding: 5px 7px; font: inherit; user-select: text; }
-  input[type=range] { flex: 1; accent-color: #5b8cff; }
+  .seg { display: flex; gap: 0; }
+  .seg button { flex: 1; border-radius: 0; padding: 5px 2px; margin-left: -1px; }
+  .seg button:first-child { border-radius: 6px 0 0 6px; margin-left: 0; }
+  .seg button:last-child { border-radius: 0 6px 6px 0; }
+  input[type=text], input[type=number] { min-width: 0; background: #0e1015; color: #e8eaf0; border: 1px solid #3a4050; border-radius: 6px; padding: 5px 7px; font: inherit; user-select: text; }
+  input[type=text] { flex: 1; }
+  input[type=number] { width: 54px; }
+  input[type=range] { flex: 1; accent-color: #5b8cff; min-width: 0; }
   select { background: #262a33; color: #e8eaf0; border: 1px solid #3a4050; border-radius: 6px; padding: 3px; font: inherit; }
   label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .lbl { width: 62px; flex-shrink: 0; color: #aab; font-size: 12px; }
   #match { font-size: 26px; font-weight: 700; color: #7dffb0; text-align: center; }
+  #regions { text-align: center; color: #9fb; font-size: 12px; min-height: 16px; }
   #target, #photoName { font-size: 12px; color: #aab; word-break: break-all; min-height: 16px; }
   #status { font-size: 12px; color: #aab; word-break: break-all; }
+  #readout { font-size: 11px; color: #ffd978; min-height: 15px; line-height: 1.5; user-select: text; word-break: break-all; }
+  #upd { font-size: 12px; color: #aab; word-break: break-all; }
   #info { font-size: 11px; color: #667; line-height: 1.5; }
   #picker { display: none; max-height: 200px; overflow: auto; border: 1px solid #3a4050; border-radius: 6px; }
   #picker.open { display: block; }
@@ -33,14 +44,25 @@
   .win small { color: #889; margin-left: 6px; }
   #nav { justify-content: space-between; }
   #nav span { font-size: 12px; color: #cfd3df; flex: 1; text-align: center; word-break: break-all; }
+  .hide { display: none !important; }
 </style></head>
 <body>
-  <h1><img src="../build/icon.png" alt="">WordSkills Diff Screen</h1>
+  <h1><img src="../build/icon.png" alt="">WordSkills Diff Screen<small id="ver"></small></h1>
 
   <section>
     <b>일치도</b>
     <div id="match">--%</div>
-    <div class="row"><span>투명도 <span id="opv">50</span>%</span><input id="op" type="range" min="0" max="100" value="50"></div>
+    <div id="regions"></div>
+    <div class="seg" id="modes">
+      <button data-mode="photo" title="사진 100%">사진</button>
+      <button data-mode="blend" title="투명도로 겹침">겹침</button>
+      <button data-mode="split" title="좌우 분할">분할</button>
+      <button data-mode="diff" title="차이를 붉게 표시">차이</button>
+      <button data-mode="emu" title="에뮬레이터만">앱</button>
+    </div>
+    <div class="row"><span class="lbl">투명도 <span id="opv">50</span>%</span><input id="op" type="range" min="0" max="100" value="50"></div>
+    <div class="row" id="splitRow"><span class="lbl">분할 <span id="spv">50</span>%</span><input id="split" type="range" min="0" max="100" value="50"></div>
+    <div class="row" id="thrRow"><span class="lbl">민감도 <span id="thv">20</span>%</span><input id="thr" type="range" min="2" max="80" value="20" title="이 정도 이상 다른 픽셀만 붉게 표시"></div>
     <button id="toggle" class="on">F4: 사진↔에뮬레이터 전환</button>
   </section>
 
@@ -56,6 +78,23 @@
     <div class="row"><input id="dir" type="text" placeholder="폴더 경로 입력 후 Enter"><button id="dirpick">폴더</button></div>
     <div class="row"><button id="photo" class="grow">사진 불러오기</button></div>
     <div class="row" id="nav"><button id="prev">←</button><span id="photoName">-</span><button id="next">→</button></div>
+    <div class="row"><button id="auto" class="grow" title="에뮬레이터 화면과 가장 비슷한 사진으로 자동 전환">자동 매칭</button><button id="link" title="지금 에뮬레이터 화면을 이 사진에 연결(자동 매칭이 학습)">화면↔사진 연결</button></div>
+  </section>
+
+  <section>
+    <b>일치도 계산</b>
+    <div class="row"><span class="lbl">상단 제외</span><input id="exTop" type="number" min="0" max="80" step="1" value="0">%
+      <span class="lbl" style="width:auto;margin-left:6px">하단 제외</span><input id="exBot" type="number" min="0" max="80" step="1" value="0">%</div>
+    <div class="row"><button id="exPreset" class="grow" title="상태바(상단 3%), 제스처바(하단 3%) 제외">상태바·하단바 제외</button><button id="cmp">지금 갱신 (F5)</button></div>
+  </section>
+
+  <section>
+    <b>도구</b>
+    <div class="seg">
+      <button id="tMeasure">측정</button><button id="tGuide">가이드</button><button id="tPick">스포이드</button>
+    </div>
+    <div class="row wrap"><label><input id="rulers" type="checkbox"> 눈금자(dp)</label><button id="clearGuides">가이드 지움</button></div>
+    <div id="readout">도구를 켠 뒤 사진 위를 클릭/드래그하세요.</div>
   </section>
 
   <section>
@@ -68,8 +107,14 @@
     <div class="row wrap">
       <label><input id="dock" type="checkbox"> 사이드바 도킹</label>
       <select id="side"><option value="right">오른쪽</option><option value="left">왼쪽</option></select>
+      <button id="adb">adb 지정</button>
     </div>
-    <div class="row"><button id="cmp" class="grow">지금 갱신 (F5)</button><button id="adb">adb 지정</button></div>
+  </section>
+
+  <section>
+    <b>업데이트</b>
+    <div id="upd">-</div>
+    <div class="row"><button id="updCheck" class="grow">업데이트 확인</button><button id="updInstall" class="hide">재시작하여 설치</button></div>
   </section>
 
   <div id="status"></div>
