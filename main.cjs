@@ -6,6 +6,7 @@ const winapi = require('./lib/winapi.cjs');
 const adbLib = require('./lib/adb.cjs');
 const { compareToPhoto } = require('./lib/compare.cjs');
 const config = require('./lib/config.cjs');
+if (process.env.DIFFM_USERDATA) app.setPath('userData', process.env.DIFFM_USERDATA);
 if (process.argv.includes('--selftest')) app.setPath('userData', path.join(require('os').tmpdir(), 'wordskills-diff-screen-selftest'));
 
 let control = null, overlay = null, calibWin = null;
