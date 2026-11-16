@@ -2,7 +2,13 @@
 const { app, BrowserWindow, ipcMain, dialog, globalShortcut, screen, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const winapi = require('./lib/winapi.cjs');
+let winapi;
+try { winapi = require('./lib/winapi.cjs'); }
+catch (e) {
+  // koffi(네이티브 모듈) 로드 실패 시 원인을 보여주고 종료
+  app.whenReady().then(() => { dialog.showErrorBox('Windows API 로드 실패', String(e && e.stack || e)); app.quit(); });
+  winapi = null;
+}
 const adbLib = require('./lib/adb.cjs');
 const { compareToPhoto } = require('./lib/compare.cjs');
 const config = require('./lib/config.cjs');
@@ -205,9 +211,11 @@ function startCalibration() {
 // ---------- IPC ----------
 function registerIpc() {
   ipcMain.handle('list-windows', () => {
+    try {
     const score = (t, c) => (/emulator|android|pixel|sdk_gphone/i.test(t) || /^Qt/.test(c) ? 0 : 1);
     return winapi.listWindows(ownHwnds()).sort((a, b) => score(a.title, a.className) - score(b.title, b.className))
       .map((w) => ({ hwnd: w.hwnd, title: w.title, className: w.className, size: `${w.rect.width}×${w.rect.height}` }));
+    } catch (e) { return { error: String(e && e.message || e) }; }
   });
   ipcMain.on('select-window', (_e, hwnd) => selectWindow(hwnd));
   ipcMain.on('pick-photo', async () => {

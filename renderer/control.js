@@ -32,7 +32,9 @@ $('pick').addEventListener('click', async () => {
   const p = $('picker');
   if (p.classList.contains('open')) { p.classList.remove('open'); fitHeight(); return; }
   p.textContent = '불러오는 중...'; p.classList.add('open'); fitHeight();
-  const list = await A.listWindows();
+  let list = [];
+  try { list = await A.listWindows(); } catch (e) { list = { error: String(e) }; }
+  if (list.error) { p.textContent = '창 목록을 가져오지 못했습니다: ' + list.error; fitHeight(); return; }
   p.textContent = '';
   for (const w of list) {
     const d = document.createElement('div');
