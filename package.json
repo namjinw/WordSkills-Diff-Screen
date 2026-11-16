@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron .",
     "selftest": "electron . --selftest",
-    "build": "electron-builder --win portable"
+    "build": "electron-builder --win nsis"
   },
   "keywords": [],
   "author": "",
@@ -36,11 +36,15 @@
       "node_modules/koffi/**"
     ],
     "win": {
-      "target": "portable"
+      "target": "nsis"
     },
-    "portable": {
-      "artifactName": "wordskills-diff-screen.exe"
-    },
-    "npmRebuild": false
+    "npmRebuild": false,
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "artifactName": "wordskills-diff-screen-setup-${version}.exe"
+    }
   }
 }

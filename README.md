@@ -26,3 +26,9 @@ npm start
 | Ctrl+Alt+PageUp/PageDown | 투명도 ±5% |
 
 설정은 `%APPDATA%/wordskills-diff-screen/config.json`에 저장됩니다.
+
+## 배포용 설치 파일
+```
+npm run build
+```
+`dist/wordskills-diff-screen-setup-<버전>.exe`(NSIS 설치 프로그램)가 만들어집니다. 코드 서명이 없어 처음 실행 시 SmartScreen 경고가 뜰 수 있습니다.
