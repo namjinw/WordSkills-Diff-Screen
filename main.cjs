@@ -163,11 +163,18 @@ function dockControl(force) {
   setBoundsSafe(control, b);
 }
 
-/** 에뮬레이터/이 앱이 앞일 때만 오버레이와 사이드바를 맨 위에 둔다. 다른 창이 위로 오면 그 창이 가려지지 않게 물러난다 */
+let lastOccCheck = 0;
+/** 대상 창 위에 다른 창이 겹쳐 있으면(코드 에디터 등) 오버레이를 숨기고 사이드바의 항상 위를 푼다.
+ *  포커스가 아니라 실제 창 겹침(z-order)으로 판단하므로 옆에 나란히 둔 창은 영향이 없다. */
 function syncAway() {
-  const fg = winapi.getForeground();
-  const mine = ownHwnds().includes(fg) || (target && fg === Number(target.hwnd));
-  const nowAway = !mine && !!target;
+  if (!target) return;
+  if (Date.now() - lastOccCheck < 200) return;
+  lastOccCheck = Date.now();
+  let nowAway = false;
+  if (winapi.windowExists(target.hwnd) && !winapi.isMinimized(target.hwnd)) {
+    const f = winapi.getFrameRect(target.hwnd);
+    nowAway = !!f && winapi.isOccluded(target.hwnd, f, ownHwnds());
+  }
   if (nowAway === away) return;
   away = nowAway;
   if (control && !control.isDestroyed()) {
@@ -191,15 +198,10 @@ let away = false;
 function toggleView() {
   if (!target) { setStatus('먼저 [창 선택]으로 에뮬레이터 창을 고르세요.'); return; }
   if (!photo) { setStatus('먼저 [사진 불러오기]로 사진을 고르세요.'); return; }
-  // 다른 앱(코드 에디터 등)이 앞이라 사진이 물러나 있는 상태: 보기 모드는 그대로 두고 에뮬레이터+사진을 다시 앞으로 가져온다
-  if (away && state.view !== 'emu') {
-    winapi.bringToFront(target.hwnd);
-    away = false; control.setAlwaysOnTop(true, 'screen-saver');
-    updateVisibility(); return;
-  }
   state.view = state.view === 'emu' ? 'photo' : 'emu';
+  winapi.bringToFront(target.hwnd); // 어느 방향이든 에뮬레이터를 앞으로(코드 에디터가 앞이어도 전환 결과가 바로 보이게)
+  lastOccCheck = 0; syncAway();
   updateVisibility();
-  winapi.bringToFront(target.hwnd); // 어느 방향이든 에뮬레이터를 앞으로
 }
 function setOpacity(v) {
   state.opacity = Math.min(100, Math.max(0, Math.round(v)));
@@ -294,9 +296,10 @@ function selectWindow(hwnd) {
   state.calibrated = !!cfg().calib[w.className];
   const hint = !photo ? ' — [사진 불러오기]를 누르면 이 창 위에 겹쳐 보입니다.' : state.calibrated ? '' : ' — 더 정확히 맞추려면 [화면 영역 보정]을 하세요.';
   setStatus(`연결: ${w.title}${hint}`);
+  winapi.bringToFront(target.hwnd);
+  lastOccCheck = 0; syncAway();
   updateVisibility();
   dockControl(true);
-  winapi.bringToFront(target.hwnd);
 }
 
 // ---------- 화면 영역 보정 (왼쪽 위 → 오른쪽 아래 클릭) ----------
@@ -372,7 +375,7 @@ function registerIpc() {
     }
   });
   ipcMain.on('set-opacity', (_e, v) => { state.view = 'blend'; setOpacity(v); updateVisibility(); });
-  ipcMain.on('toggle-view', toggleView);
+  ipcMain.on('toggle-view', () => { const now = Date.now(); if (now - lastToggle < 300) return; lastToggle = now; toggleView(); });
   ipcMain.on('set-click-through', (_e, b) => setClickThrough(b));
   ipcMain.on('set-auto-fit', (_e, b) => { state.autoFit = !!b; config.save({ autoFit: state.autoFit }); if (b) applyRect(true); pushState(); });
   ipcMain.on('set-auto-compare', (_e, b) => { state.autoCompare = !!b; config.save({ autoCompare: state.autoCompare }); restartCompareTimer(); pushState(); });
@@ -390,6 +393,21 @@ function registerIpc() {
 // F4(전환)만 항상 전역으로 등록한다. 나머지는 대상(에뮬레이터) 창이 맨 앞일 때만 등록해 다른 프로그램의 키를 가로채지 않는다.
 // 컨트롤 창이 앞일 때는 컨트롤 창 안에서 같은 키를 직접 처리한다(renderer/control.js).
 let regKey = '';
+let condKeys = [];            // 조건부로 등록한 단축키 목록
+let lastToggle = 0, lastStep = 0;
+
+/** F4는 시작할 때 한 번만 등록하고 절대 해제/재등록하지 않는다.
+ *  (재등록하면 키를 누르고 있는 동안 자동 반복 입력이 다시 잡혀 전환이 연속으로 일어나는 문제가 있었다) */
+function registerF4() {
+  try {
+    globalShortcut.register('F4', () => {
+      const now = Date.now();
+      if (now - lastToggle < 300) return; // 키 반복·중복 입력 무시
+      lastToggle = now; toggleView();
+    });
+  } catch {}
+}
+
 function syncShortcuts() {
   if (!winapi) return;
   const active = !!target && winapi.getForeground() === Number(target.hwnd);
@@ -397,9 +415,9 @@ function syncShortcuts() {
   const key = (active ? 'a' : '-') + (nav ? 'n' : '-');
   if (key === regKey) return;
   regKey = key;
-  globalShortcut.unregisterAll();
-  const reg = (acc, fn) => { try { globalShortcut.register(acc, fn); } catch {} };
-  reg('F4', toggleView); // 전환은 어느 창이 앞이든(코드 에디터 포함) 항상 동작
+  for (const k of condKeys) { try { globalShortcut.unregister(k); } catch {} }
+  condKeys = [];
+  const reg = (acc, fn) => { try { if (globalShortcut.register(acc, fn)) condKeys.push(acc); } catch {} };
   if (active) {
     const M = 'CommandOrControl+Alt+';
     reg('F5', compareNow);
@@ -412,16 +430,18 @@ function syncShortcuts() {
     reg(M + 'PageUp', () => setOpacity(state.opacity + 5));
     reg(M + 'PageDown', () => setOpacity(state.opacity - 5));
   }
-  if (nav) { reg('Left', () => stepPhoto(-1)); reg('Right', () => stepPhoto(1)); }
+  const step = (d) => () => { const now = Date.now(); if (now - lastStep < 150) return; lastStep = now; stepPhoto(d); };
+  if (nav) { reg('Left', step(-1)); reg('Right', step(1)); }
 }
 
 app.whenReady().then(() => {
   const c = cfg();
   Object.assign(state, { opacity: c.opacity, clickThrough: c.clickThrough, autoFit: c.autoFit, autoCompare: c.autoCompare, docked: c.docked, dockSide: c.dockSide });
   state.adbPath = adbLib.findAdb(c.adbPath) || '';
-  registerIpc(); createControl(); createOverlay(); restartCompareTimer();
+  registerIpc(); createControl(); createOverlay(); registerF4(); restartCompareTimer();
   if (c.photoDir && fs.existsSync(c.photoDir)) refreshDir(c.photoDir);
   if (c.photoPath && fs.existsSync(c.photoPath)) loadPhotoFile(c.photoPath);
+  if (process.argv.includes('--e2e')) require('./test/e2e.cjs')({ selectWindow, loadPhotoFile, setDir, stepPhoto, getOverlay: () => overlay, getControl: () => control, winapi, state });
   if (process.argv.includes('--selftest')) {
     require('./test/selftest.cjs')({ selectWindow, loadPhotoFile, setOpacity, toggleView, setDir, stepPhoto, getOverlay: () => overlay, getControl: () => control, state, winapi });
   }

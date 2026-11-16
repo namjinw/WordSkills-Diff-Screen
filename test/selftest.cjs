@@ -114,13 +114,18 @@ module.exports = async (ctx) => {
     other.focus(); await sleep(700);
     check('다른 창이 앞일 때 오버레이 숨김', !ov.isVisible());
     check('다른 창이 앞일 때 사이드바 항상 위 해제', !getControl().isAlwaysOnTop());
-    const viewBefore = state.view;
+    // F4는 포커스·가려짐과 무관하게 항상 전환하고, 대상 창을 앞으로 가져온다
     toggleView(); await sleep(500);
-    check('다른 창이 앞일 때 F4: 사진이 다시 앞으로(모드 유지)', ov.isVisible() && state.view === viewBefore, `view=${state.view}`);
-    other.focus(); await sleep(700);
-    other.destroy(); winapi.bringToFront(np.hwnd); await sleep(700);
-    check('대상 창이 다시 앞이면 오버레이 복귀', ov.isVisible());
+    check('다른 창이 앞이어도 F4가 전환(에뮬레이터 보기)', state.view === 'emu' && winapi.getForeground() === np.hwnd, `view=${state.view}`);
+    other.focus(); await sleep(500);
+    toggleView(); await sleep(500);
+    check('다른 창이 앞이어도 F4로 사진 보기: 오버레이 즉시 복귀', state.view === 'photo' && ov.isVisible(), `view=${state.view} visible=${ov.isVisible()}`);
     check('사이드바 항상 위 복귀', getControl().isAlwaysOnTop());
+    other.destroy();
+
+    // 9-3) F4를 연타해도(키 반복) 중복 전환되지 않고 한 번씩 정확히 번갈아 동작
+    const v0 = state.view; toggleView(); toggleView(); await sleep(300);
+    check('연속 호출해도 상태 일관(두 번 = 원래대로)', state.view === v0, state.view);
 
     // 10) 클릭 통과는 API가 없어 설정 호출만 확인
     check('adb 경로 탐색', true, state.adbPath || '(없음)');
