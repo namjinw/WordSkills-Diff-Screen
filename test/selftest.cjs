@@ -74,7 +74,19 @@ module.exports = async (ctx) => {
     toggleView(); await sleep(200);
     check('전환: 사진 보기(오버레이 표시)', ov.isVisible());
 
-    // 7) 클릭 통과는 API가 없어 설정 호출만 확인
+    // 7) 에뮬레이터 창(제목줄 포함) 기본 맞춤: 아래 기준 + 사진 비율
+    const emu = new BrowserWindow({ x: 700, y: 100, width: 300, height: 900, title: 'Android Emulator - test:5554' });
+    emu.loadURL('data:text/html,emu');
+    let ew = null;
+    for (let i = 0; i < 40 && !ew; i++) { await sleep(250); ew = winapi.listWindows().find((w) => w.title.startsWith('Android Emulator - test')); }
+    selectWindow(ew.hwnd); await sleep(500);
+    const fr = winapi.getFrameRect(ew.hwnd);
+    const want = screen.screenToDipRect(null, { x: fr.x, y: fr.y + fr.height - Math.round(fr.width * 2), width: fr.width, height: Math.round(fr.width * 2) });
+    b = ov.getBounds();
+    check('에뮬레이터 창: 아래 기준·사진 비율로 맞춤(제목줄 제외)', near(b, want), `overlay ${JSON.stringify(b)} / want ${JSON.stringify(want)}`);
+    emu.destroy();
+
+    // 8) 클릭 통과는 API가 없어 설정 호출만 확인
     check('adb 경로 탐색', true, state.adbPath || '(없음)');
   } catch (err) {
     check('예외 없이 진행', false, err.message);

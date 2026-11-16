@@ -68,6 +68,12 @@ function screenRect() {
   if (!f) return null;
   const c = cfg().calib[target.className];
   let r = f;
+  if (!c && photo && /^Qt|Android Emulator/.test(target.className + ' ' + target.title)) {
+    // 보정 전 기본값: 에뮬레이터 창은 위쪽에만 제목줄이 있으므로 아래·좌우를 창에 붙이고 사진 비율로 높이를 정한다
+    const { width: pw, height: ph } = photo.getSize();
+    const h = Math.round(f.width * ph / pw);
+    if (h > 0 && h <= f.height) r = { x: f.x, y: f.y + f.height - h, width: f.width, height: h };
+  }
   if (c) r = { x: f.x + c.left, y: f.y + c.top, width: f.width - c.left - c.right, height: f.height - c.top - c.bottom };
   return { x: r.x + offset.x, y: r.y + offset.y, width: Math.max(1, r.width), height: Math.max(1, r.height) };
 }
