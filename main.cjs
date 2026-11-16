@@ -145,7 +145,8 @@ function selectWindow(hwnd) {
   offset = { x: 0, y: 0 }; lastRect = '';
   state.targetTitle = w.title;
   state.calibrated = !!cfg().calib[w.className];
-  setStatus(state.calibrated ? `연결: ${w.title}` : `연결: ${w.title} — [화면 영역 보정]이 필요합니다.`);
+  const hint = !photo ? ' — [사진 불러오기]를 누르면 이 창 위에 겹쳐 보입니다.' : state.calibrated ? '' : ' — [화면 영역 보정]이 필요합니다.';
+  setStatus(`연결: ${w.title}${hint}`);
   updateVisibility();
 }
 
