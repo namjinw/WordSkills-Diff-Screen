@@ -1,50 +1,78 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'self' file:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'self' file:; img-src 'self' file:">
 <title>wordskills-diff-screen</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
-  body { margin: 0; padding: 10px 12px; background: #15171c; color: #e8eaf0; font: 13px 'Malgun Gothic', sans-serif; user-select: none; }
-  .row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-  .bar { font-size: 15px; font-weight: 700; }
-  .bar input[type=range] { flex: 1; accent-color: #5b8cff; }
-  #match { min-width: 108px; text-align: right; color: #7dffb0; font-size: 16px; }
-  button { background: #262a33; color: #e8eaf0; border: 1px solid #3a4050; border-radius: 6px; padding: 5px 10px; font: inherit; cursor: pointer; }
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; flex-direction: column; padding: 12px; gap: 10px; background: #15171c; color: #e8eaf0;
+    font: 13px 'Malgun Gothic', sans-serif; user-select: none; overflow-y: auto; }
+  h1 { margin: 0; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+  h1 img { width: 22px; height: 22px; }
+  section { border: 1px solid #2a2f3b; border-radius: 8px; padding: 9px; display: flex; flex-direction: column; gap: 7px; flex-shrink: 0; }
+  section > b { font-size: 11px; color: #8a93a8; font-weight: 600; letter-spacing: .04em; }
+  .row { display: flex; align-items: center; gap: 6px; }
+  .row.wrap { flex-wrap: wrap; }
+  button { background: #262a33; color: #e8eaf0; border: 1px solid #3a4050; border-radius: 6px; padding: 5px 9px; font: inherit; cursor: pointer; }
   button:hover { background: #31364a; }
   button.on { background: #3a5bd9; border-color: #5b8cff; }
+  button.grow { flex: 1; }
+  input[type=text] { flex: 1; min-width: 0; background: #0e1015; color: #e8eaf0; border: 1px solid #3a4050; border-radius: 6px; padding: 5px 7px; font: inherit; user-select: text; }
+  input[type=range] { flex: 1; accent-color: #5b8cff; }
+  select { background: #262a33; color: #e8eaf0; border: 1px solid #3a4050; border-radius: 6px; padding: 3px; font: inherit; }
   label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-  .wrap { flex-wrap: wrap; gap: 6px; }
-  #status { font-size: 12px; color: #aab; min-height: 16px; word-break: break-all; }
-  #info { font-size: 11px; color: #778; margin-top: 4px; }
-  #picker { display: none; margin-bottom: 8px; border: 1px solid #3a4050; border-radius: 6px; max-height: 220px; overflow: auto; }
+  #match { font-size: 26px; font-weight: 700; color: #7dffb0; text-align: center; }
+  #target, #photoName { font-size: 12px; color: #aab; word-break: break-all; min-height: 16px; }
+  #status { font-size: 12px; color: #aab; word-break: break-all; }
+  #info { font-size: 11px; color: #667; line-height: 1.5; }
+  #picker { display: none; max-height: 200px; overflow: auto; border: 1px solid #3a4050; border-radius: 6px; }
   #picker.open { display: block; }
-  .win { padding: 5px 8px; cursor: pointer; border-bottom: 1px solid #262a33; }
+  .win { padding: 5px 8px; cursor: pointer; border-bottom: 1px solid #262a33; word-break: break-all; }
   .win:hover { background: #31364a; }
   .win small { color: #889; margin-left: 6px; }
+  #nav { justify-content: space-between; }
+  #nav span { font-size: 12px; color: #cfd3df; flex: 1; text-align: center; word-break: break-all; }
 </style></head>
 <body>
-  <div class="row bar">
-    <span>투명도 <span id="opv">50</span>%</span>
-    <input id="op" type="range" min="0" max="100" value="50">
-    <span id="match">일치도 --%</span>
-  </div>
-  <div class="row wrap">
-    <button id="pick">창 선택</button>
-    <button id="photo">사진 불러오기</button>
-    <button id="toggle">Tab: 사진↔에뮬레이터 전환</button>
-    <button id="fit">맞추기</button>
-    <button id="calib">화면 영역 보정</button>
-  </div>
-  <div id="picker"></div>
-  <div class="row wrap">
-    <label><input id="autofit" type="checkbox"> 자동 맞춤</label>
-    <label><input id="click" type="checkbox"> 클릭 통과</label>
-    <label><input id="autocmp" type="checkbox"> 일치도 자동 갱신</label>
-    <button id="cmp">지금 갱신 (F5)</button>
-    <button id="adb">adb 지정</button>
-  </div>
+  <h1><img src="../build/icon.png" alt="">WordSkills Diff Screen</h1>
+
+  <section>
+    <b>일치도</b>
+    <div id="match">--%</div>
+    <div class="row"><span>투명도 <span id="opv">50</span>%</span><input id="op" type="range" min="0" max="100" value="50"></div>
+    <button id="toggle" class="on">F4: 사진↔에뮬레이터 전환</button>
+  </section>
+
+  <section>
+    <b>에뮬레이터 창</b>
+    <div class="row"><button id="pick" class="grow">창 선택</button><button id="fit">맞추기</button><button id="calib">화면 영역 보정</button></div>
+    <div id="target"></div>
+    <div id="picker"></div>
+  </section>
+
+  <section>
+    <b>사진 (.png 폴더)</b>
+    <div class="row"><input id="dir" type="text" placeholder="폴더 경로 입력 후 Enter"><button id="dirpick">폴더</button></div>
+    <div class="row"><button id="photo" class="grow">사진 불러오기</button></div>
+    <div class="row" id="nav"><button id="prev">←</button><span id="photoName">-</span><button id="next">→</button></div>
+  </section>
+
+  <section>
+    <b>옵션</b>
+    <div class="row wrap">
+      <label><input id="autofit" type="checkbox"> 자동 맞춤</label>
+      <label><input id="click" type="checkbox"> 클릭 통과</label>
+      <label><input id="autocmp" type="checkbox"> 일치도 자동 갱신</label>
+    </div>
+    <div class="row wrap">
+      <label><input id="dock" type="checkbox"> 사이드바 도킹</label>
+      <select id="side"><option value="right">오른쪽</option><option value="left">왼쪽</option></select>
+    </div>
+    <div class="row"><button id="cmp" class="grow">지금 갱신 (F5)</button><button id="adb">adb 지정</button></div>
+  </section>
+
   <div id="status"></div>
-  <div id="info">F4 전환(사진 100% ↔ 에뮬레이터, 슬라이더를 움직이면 겹쳐 보기) · F5 갱신 · F6 클릭통과 · Ctrl+Alt+방향키 1px(Shift 10px) · Ctrl+Alt+0 이동 초기화 · Ctrl+Alt+PgUp/PgDn 투명도</div>
+  <div id="info">F4 전환 · F5 갱신 · F6 클릭 통과 · ←/→ 이전/다음 사진<br>Ctrl+Alt+방향키 1px(Shift 10px) · Ctrl+Alt+0 이동 초기화 · Ctrl+Alt+PgUp/PgDn 투명도<br>단축키는 이 창 또는 에뮬레이터 창이 앞에 있을 때만 동작합니다.</div>
   <script src="control.js"></script>
 </body></html>

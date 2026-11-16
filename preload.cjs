@@ -8,7 +8,9 @@ contextBridge.exposeInMainWorld('api', {
   setOpacity: send('set-opacity'), toggleView: send('toggle-view'), setClickThrough: send('set-click-through'),
   setAutoFit: send('set-auto-fit'), setAutoCompare: send('set-auto-compare'), fitNow: send('fit-now'),
   resetOffset: send('reset-offset'), calibrate: send('calibrate'), compareNow: send('compare-now'),
-  getState: send('get-state'), resizeUi: send('resize-ui'),
+  getState: send('get-state'),
+  pickDir: send('pick-dir'), setDir: send('set-dir'), step: send('step'), nudge: send('nudge'),
+  setDock: send('set-dock'), setDockSide: send('set-dock-side'),
   calibClick: send('calib-click'), calibCancel: send('calib-cancel'),
   onState: on('state'), onOverlay: on('overlay'), onOverlayImage: on('overlay-image'), onCalibStep: on('calib-step'),
 });

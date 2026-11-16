@@ -22,7 +22,7 @@ function solid(w, h, [r, g, b]) {
 }
 
 module.exports = async (ctx) => {
-  const { selectWindow, loadPhotoFile, setOpacity, toggleView, getOverlay, winapi, state } = ctx;
+  const { selectWindow, loadPhotoFile, setOpacity, toggleView, setDir, stepPhoto, getOverlay, getControl, winapi, state } = ctx;
   let notepad;
   try {
     // 1) 비교 계산
@@ -86,7 +86,39 @@ module.exports = async (ctx) => {
     check('에뮬레이터 창: 아래 기준·사진 비율로 맞춤(제목줄 제외)', near(b, want), `overlay ${JSON.stringify(b)} / want ${JSON.stringify(want)}`);
     emu.destroy();
 
-    // 8) 클릭 통과는 API가 없어 설정 호출만 확인
+    // 8) 폴더의 png 전환 (←/→), 숫자 순 정렬, png만
+    const dir = path.join(os.tmpdir(), 'diffm-dir'); fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir);
+    for (const n of ['10.png', '2.png', '1.png']) fs.writeFileSync(path.join(dir, n), solid(30, 60, [0, 128, 255]).toPNG());
+    fs.writeFileSync(path.join(dir, 'memo.txt'), 'x'); fs.writeFileSync(path.join(dir, '3.jpg'), 'x');
+    selectWindow(np.hwnd); await sleep(300);
+    setDir(dir); await sleep(300);
+    check('폴더: png만 3개 인식, 첫 사진 로드', state.count === 3 && state.photoName === '1.png', `${state.photoName} ${state.index + 1}/${state.count}`);
+    stepPhoto(1); stepPhoto(1);
+    check('→ 두 번: 10.png (숫자 순)', state.photoName === '10.png', state.photoName);
+    stepPhoto(1);
+    check('→ 끝에서 처음으로 순환', state.photoName === '1.png', state.photoName);
+    stepPhoto(-1);
+    check('← 이전 사진', state.photoName === '10.png', state.photoName);
+    toggleView(); stepPhoto(1);
+    check('에뮬레이터 보기에서는 전환 안 됨', state.photoName === '10.png', state.photoName);
+    toggleView(); await sleep(200);
+
+    // 9) 사이드바 도킹: 컨트롤 창이 대상 창 옆에 붙음(겹치지 않음)
+    await sleep(600);
+    const cb = getControl().getBounds(), tb = screen.screenToDipRect(null, winapi.getFrameRect(np.hwnd));
+    const noOverlap = cb.x >= tb.x + tb.width || cb.x + cb.width <= tb.x;
+    check('사이드바가 에뮬레이터 창 옆에 도킹', noOverlap && Math.abs(cb.width - 320) <= 4, `side ${JSON.stringify(cb)} / target ${JSON.stringify(tb)}`);
+
+    // 9-2) 다른 창이 앞에 오면 오버레이·사이드바가 물러나 가려지지 않음
+    const other = new BrowserWindow({ x: 330, y: 170, width: 200, height: 200, title: 'DIFFM-OTHER' });
+    other.focus(); await sleep(700);
+    check('다른 창이 앞일 때 오버레이 숨김', !ov.isVisible());
+    check('다른 창이 앞일 때 사이드바 항상 위 해제', !getControl().isAlwaysOnTop());
+    other.destroy(); winapi.bringToFront(np.hwnd); await sleep(700);
+    check('대상 창이 다시 앞이면 오버레이 복귀', ov.isVisible());
+    check('사이드바 항상 위 복귀', getControl().isAlwaysOnTop());
+
+    // 10) 클릭 통과는 API가 없어 설정 호출만 확인
     check('adb 경로 탐색', true, state.adbPath || '(없음)');
   } catch (err) {
     check('예외 없이 진행', false, err.message);
