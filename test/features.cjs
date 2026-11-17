@@ -81,6 +81,12 @@ module.exports = async function features(ctx, check) {
     loadPhotoFile(path.join(mdir, '1.png'), { noCompare: true });
     await autoMatchStep(appScreen); await autoMatchStep(appScreen);
     check('연결한 화면이 나타나면 연결된 사진(3.png)으로 자동 전환', state.photoName === '3.png', state.photoName);
+    // 앱 화면(F4)을 보는 중에 자동 매칭이 사진을 바꿔도 오버레이가 다시 뜨면 안 된다
+    setMode('emu'); await sleep(250);
+    loadPhotoFile(path.join(mdir, '1.png'), { noCompare: true, keepMode: true });
+    await autoMatchStep(imgs['2.png']); await autoMatchStep(imgs['2.png']);
+    check('앱 보는 중 자동 매칭: 사진은 바뀌어도 모드는 emu 유지·오버레이 숨김', state.photoName === '2.png' && state.mode === 'emu' && !ov.isVisible(), state.photoName + ' ' + state.mode);
+    setMode('blend'); await sleep(250);
     state.autoMatch = false;
   }
 
@@ -92,6 +98,7 @@ module.exports = async function features(ctx, check) {
     const pc = pickColor(0.5, 0.5);
     check('스포이드: 사진 #123456 / 앱 화면 #ABCDEF', !!pc && pc.photo === '#123456' && pc.emu === '#ABCDEF', JSON.stringify(pc));
     { const ct = await clipboard.readText(); check('스포이드: 클립보드에 사진 색 복사', ct === '#123456', JSON.stringify(ct)); }
+    state.dev = { w: 1080, h: 2400, density: 420 };   // adb 기기 유무와 상관없이 같은 조건(Pixel 7)으로 검사
     setMode('blend'); setTool('measure'); await sleep(400);
     check('측정 도구 켜짐', state.tool === 'measure');
     state.readout.length = 0;

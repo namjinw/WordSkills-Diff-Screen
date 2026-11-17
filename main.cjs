@@ -287,7 +287,7 @@ function loadPhotoFile(file, opts = {}) {
   else state.index = files.findIndex((f) => path.resolve(f) === path.resolve(file));
   state.links = (links[path.resolve(file)] || []).length;
   sendPhoto();
-  if (state.mode === 'emu') state.mode = state.lastMode || 'blend';
+  if (state.mode === 'emu' && !opts.keepMode) state.mode = state.lastMode || 'blend';
   lastRect = ''; updateVisibility();
   setStatus(`${state.photoName}${state.count ? ` (${state.index + 1}/${state.count})` : ''}`);
   if (!opts.noCompare) compareNow();
@@ -374,7 +374,7 @@ async function autoMatchStep(shot) {
   if (pendingKey === top.key) pendingCount++; else { pendingKey = top.key; pendingCount = 1; }
   if (pendingCount < 2) return;
   pendingKey = ''; pendingCount = 0;
-  loadPhotoFile(top.key, { noCompare: true });
+  loadPhotoFile(top.key, { noCompare: true, keepMode: true });   // 앱(emu) 보는 중이면 오버레이를 다시 띄우지 않는다
   state.matchNote = `자동 매칭: ${path.basename(top.key)} (${top.score}%)`;
 }
 
